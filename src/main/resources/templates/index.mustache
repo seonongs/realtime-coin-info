@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Coin-Info</title>
+    <script
+            src="https://code.jquery.com/jquery-3.1.1.min.js"
+            integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+            crossorigin="anonymous">
+    </script>
+</head>
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        $("#btn_open").removeAttr("disabled");
+        $("#btn_close").attr("disabled", "disabled");
+
+        init();
+        doSend();
+    });
+
+    let wSocket;
+
+    function init() {
+        wSocket = new WebSocket("wss://pubwss.bithumb.com/pub/ws");
+        wSocket.onopen = function (e) {
+            onOpen(e)
+        };
+        wSocket.onclose = function (e) {
+            onClose(e)
+        };
+        wSocket.onmessage = function (e) {
+            onMessage(e)
+        };
+        wSocket.onerror = function (e) {
+            onError(e)
+        };
+    }
+
+    function onOpen() {
+        // alert("WebSocket opened!");
+
+        $("#btn_open").attr("disabled", "disabled");
+        $("#btn_close").removeAttr("disabled");
+
+        doSend();
+    }
+
+    function onClose() {
+        $("#btn_open").removeAttr("disabled");
+        $("#btn_close").attr("disabled", "disabled");
+    }
+
+    function onMessage(e) {
+
+        function numberWithCommas(x) {
+            return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        const response = JSON.parse(e.data);
+        const responseContent = JSON.parse(e.data).content;
+
+        console.log(response)
+
+        $("#datetime").html(responseContent.date + " " + responseContent.time);
+        console.log(responseContent.date + " " + responseContent.time);
+
+        if (JSON.parse(e.data).content.symbol == "BTC_KRW") {
+            $("#BTC-KRW-closePrice").html(numberWithCommas(responseContent.closePrice));
+        }
+
+        if (JSON.parse(e.data).content.symbol === "ETH_KRW") {
+            $("#ETH-KRW-closePrice").html(numberWithCommas(responseContent.closePrice));
+        }
+    }
+
+    function onError(e) {
+        alert("오류발생 : " + e.data);
+    }
+
+    function doOpen() {
+        init();
+    }
+
+    function doClose() {
+        wSocket.close();
+    }
+
+    function doSend() {
+        wSocket.send('{"type":"ticker", "symbols": [ "BTC_KRW","ETH_KRW" ], "tickTypes": [ "MID" ]}');
+    }
+
+</script>
+
+<body>
+{{>layout/header}}
+
+<div class="ui buttons">
+    <button class="ui button" onclick="doClose();" value="Close" id="btn_close">Cancel</button>
+    <div class="or"></div>
+    <button class="ui positive button" onclick="doOpen();" value="Open" id="btn_open">Open</button>
+</div>
+
+<table class="ui celled striped table">
+    <thead>
+    <tr>
+        <th>BTC</th>
+        <th><span id="BTC-KRW-closePrice"></span></th>
+    </tr>
+    <tr>
+        <th>ETH</th>
+        <th><span id="ETH-KRW-closePrice"></span></th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+{{>layout/footer}}
+</body>
+</html>
